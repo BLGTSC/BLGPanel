@@ -1,45 +1,38 @@
 const express = require('express');
-const { exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { exec, spawn } = require('child_process');
 const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
+// Obiect pentru a stoca procesele active
+let activeProcesses = {};
+let servers = {
+  "survival": { name: "Survival Vanilla", status: "OFFLINE", cpu: 0, mem: 0 },
+  "lobby": { name: "Lobby Primary", status: "OFFLINE", cpu: 0, mem: 0 }
+};
+
+app.get('/api/servers', (req, res) => res.json(servers));
+
+app.post('/api/command', (req, res) => {
+  const { id, action } = req.body;
+  
+  if (action === 'start' && servers[id].status === "OFFLINE") {
+    // Aici pornești procesul real (exemplu: un script sau java)
+    // activeProcesses[id] = spawn('java', ['-Xmx1G', '-jar', 'server.jar'], { cwd: '/cale/catre/server' });
+    
+    servers[id].status = "ONLINE";
+    servers[id].cpu = 15; // Simulat pana la integrarea 'pidusage'
+  } else if (action === 'stop') {
+    // if (activeProcesses[id]) activeProcesses[id].kill();
+    servers[id].status = "OFFLINE";
+    servers[id].cpu = 0;
+  }
+  
+  res.json(servers[id]);
+});
+
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
-
-// Statisici Live (CPU/RAM)
-app.get('/api/stats', (req, res) => {
-  exec("top -bn1 | grep 'Cpu(s)' | awk '{print $2}'", (err, cpu) => {
-    exec("free | grep Mem | awk '{print $3/$2 * 100.0}'", (err, ram) => {
-      res.json({
-        cpu: parseFloat(cpu || 0).toFixed(1),
-        ram: parseFloat(ram || 0).toFixed(1),
-        uptime: (process.uptime() / 3600).toFixed(1) + " ore"
-      });
-    });
-  });
-});
-
-// Manager Fisiere - Citire director
-app.get('/api/files', (req, res) => {
-  const dir = req.query.path || '/var/www/BLGPanel';
-  fs.readdir(dir, { withFileTypes: true }, (err, files) => {
-    if (err) return res.status(500).json(err);
-    res.json(files.map(f => ({ name: f.name, isDir: f.isDirectory() })));
-  });
-});
-
-// Terminal SSH via Socket.io
-io.on('connection', (socket) => {
-  socket.on('input', (cmd) => {
-    exec(cmd, (err, stdout, stderr) => {
-      socket.emit('output', stdout || stderr || "\n");
-    });
-  });
-});
-
-server.listen(3001, () => console.log('Backend activ pe portul 3001'));
+server.listen(3001, () => console.log('Nexus Backend Pro activ'));

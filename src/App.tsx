@@ -1,96 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import React, { useState, useEffect } from 'react';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [stats, setStats] = useState({ cpu: '0', ram: '0', uptime: '0 ore' });
-  const [terminalOutput, setTerminalOutput] = useState('Consola pregatita...\n');
-  const [command, setCommand] = useState('');
-  const [files, setFiles] = useState([]);
-  const socketRef = useRef(null);
+  const [servers, setServers] = useState({});
   const apiUrl = `http://${window.location.hostname}:3001`;
 
-  useEffect(() => {
-    const i = setInterval(async () => {
-      try {
-        const res = await fetch(`${apiUrl}/api/stats`);
-        if (res.ok) setStats(await res.json());
-      } catch (e) {}
-    }, 3000);
-    
-    if (!socketRef.current) {
-      socketRef.current = io(apiUrl);
-      socketRef.current.on('output', (data) => setTerminalOutput(prev => prev + data));
-    }
-
-    if (activeTab === 'files') {
-      fetch(`${apiUrl}/api/files`).then(r => r.json()).then(setFiles);
-    }
-
-    return () => clearInterval(i);
-  }, [activeTab]);
-
-  const sendCommand = (e) => {
-    e.preventDefault();
-    if (socketRef.current && command.trim()) {
-      setTerminalOutput(prev => prev + "$ " + command + "\n");
-      socketRef.current.emit('input', command);
-      setCommand('');
-    }
+  const fetchServers = () => {
+    fetch(`${apiUrl}/api/servers`).then(res => res.json()).then(setServers);
   };
 
-  const navItem = (id, icon, label) => (
-    <div onClick={() => setActiveTab(id)} style={{ padding: '14px 20px', margin: '5px 0', cursor: 'pointer', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', transition: '0.3s', background: activeTab === id ? 'rgba(59, 130, 246, 0.1)' : 'transparent', color: activeTab === id ? '#3b82f6' : '#94a3b8' }}>
-      <span>{icon}</span> {label}
+  useEffect(() => {
+    fetchServers();
+    const interval = setInterval(fetchServers, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAction = (id, action) => {
+    fetch(`${apiUrl}/api/command`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action })
+    }).then(fetchServers);
+  };
+
+  const ServerCard = ({ id, data }) => (
+    <div style={{ background: '#111', border: '1px solid #222', borderRadius: '12px', padding: '20px', width: '300px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+        <div>
+          <div style={{ color: data.status === "ONLINE" ? "#ff6600" : "#666", fontSize: '10px', fontWeight: 'bold' }}>● {data.status}</div>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{data.name}</div>
+        </div>
+        <div style={{ display: 'flex', gap: '5px' }}>
+          <button onClick={() => handleAction(id, 'start')} style={{ background: '#222', cursor: 'pointer', color: 'white', padding: '5px 10px', borderRadius: '5px' }}>▶</button>
+          <button onClick={() => handleAction(id, 'stop')} style={{ background: '#222', cursor: 'pointer', color: 'white', padding: '5px 10px', borderRadius: '5px' }}>■</button>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: '10px', color: '#555' }}>CPU LOAD <span style={{color:'#ff6600'}}>{data.cpu}%</span></div>
+        <div style={{ height: '4px', background: '#222', marginTop: '5px', borderRadius: '2px' }}>
+          <div style={{ width: data.cpu+'%', height: '100%', background: '#ff6600' }}></div>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', background: '#020617', color: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      <div style={{ width: '260px', background: '#0f172a', padding: '30px 20px', borderRight: '1px solid #1e293b' }}>
-        <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6', marginBottom: '40px' }}>BLGPANEL</div>
-        {navItem('dashboard', '📊', 'Dashboard')}
-        {navItem('terminal', '🖥️', 'Terminal SSH')}
-        {navItem('files', '📂', 'Manager Fisiere')}
+    <div style={{ display: 'flex', background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      <div style={{ width: '240px', background: '#080808', padding: '20px', borderRight: '1px solid #111' }}>
+        <div style={{ color: '#ff6600', fontWeight: 'bold', fontSize: '20px', marginBottom: '40px' }}>BLGPANEL</div>
+        <div style={{ padding: '10px', color: '#ff6600', background: 'rgba(255,64,0,0.1)', borderRadius: '8px' }}>Dashboard</div>
       </div>
-
-      <div style={{ flex: 1, padding: '50px' }}>
-        {activeTab === 'dashboard' ? (
-          <div>
-            <h1>Starea serverului</h1>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-              <div style={{ background: '#0f172a', padding: '25px', borderRadius: '20px' }}>
-                <p>CPU</p><h2>{stats.cpu}%</h2>
-              </div>
-              <div style={{ background: '#0f172a', padding: '25px', borderRadius: '20px' }}>
-                <p>RAM</p><h2>{stats.ram}%</h2>
-              </div>
-              <div style={{ background: '#0f172a', padding: '25px', borderRadius: '20px' }}>
-                <p>UPTIME</p><h2>{stats.uptime}</h2>
-              </div>
-            </div>
-          </div>
-        ) : activeTab === 'terminal' ? (
-          <div style={{ height: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1, background: '#000', padding: '20px', borderRadius: '15px', color: '#10b981', overflowY: 'auto', fontFamily: 'monospace' }}>
-              <pre>{terminalOutput}</pre>
-            </div>
-            <form onSubmit={sendCommand} style={{ marginTop: '15px' }}>
-              <input value={command} onChange={(e) => setCommand(e.target.value)} style={{ width: '100%', background: '#0f172a', border: '1px solid #1e293b', padding: '15px', color: 'white', borderRadius: '10px' }} placeholder="Scrie comanda..." />
-            </form>
-          </div>
-        ) : (
-          <div>
-            <h1>Fisiere Proiect</h1>
-            <div style={{ background: '#0f172a', borderRadius: '15px', padding: '20px' }}>
-              {files.map(f => (
-                <div key={f.name} style={{ padding: '10px', borderBottom: '1px solid #1e293b' }}>
-                  {f.isDir ? '📁' : '📄'} {f.name}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      <div style={{ flex: 1, padding: '40px' }}>
+        <div style={{ display: 'flex', gap: '20px' }}>
+          {Object.entries(servers).map(([id, data]) => (
+            <ServerCard key={id} id={id} data={data} />
+          ))}
+        </div>
       </div>
     </div>
   );
