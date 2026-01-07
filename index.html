@@ -1,74 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BLGPanel | Industrial Command Center</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        --electric-orange: #ff5f00;
-        --industrial-black: #090909;
-        --panel-gray: #121212;
-      }
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--industrial-black);
-        color: #fafafa;
-        overflow-x: hidden;
-      }
-      .font-mono {
-        font-family: 'JetBrains Mono', monospace;
-      }
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--industrial-black);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #1a1a1a;
-        border-radius: 4px;
-        border: 2px solid var(--industrial-black);
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--electric-orange);
-      }
-      .orange-glow {
-        box-shadow: 0 0 20px rgba(255, 95, 0, 0.15);
-      }
-      .text-neon {
-        text-shadow: 0 0 10px rgba(255, 95, 0, 0.5);
-      }
-      .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: #1a1a1a transparent;
-      }
-      @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-      }
-      .float { animation: float 6s ease-in-out infinite; }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0"
-  }
-}
-</script>
-</head>
-  <body class="antialiased">
+    <title>BLGPanel</title>
+  </head>
+  <body>
     <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
